@@ -66,7 +66,6 @@ class TasksScreen extends React.Component {
         <Button
           className={classes.buttonWrapper}
           onClick={this.handleModal}
-          variant="flat"
           color="primary"
           fullWidth={false}
         >

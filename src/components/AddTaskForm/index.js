@@ -10,8 +10,33 @@ import Divider from "@material-ui/core/Divider"
 import InputBase from "@material-ui/core/InputBase"
 import Menu from "@material-ui/core/Menu"
 import MenuItem from "@material-ui/core/MenuItem"
+import Grid from "@material-ui/core/Grid"
 import { Formik } from "formik"
 import * as Yup from "yup"
+
+import MakeId from "../../services/RandomIdGenerator"
+import AxiosPost from "../../services/Axios"
+
+const CheckCircleCustom = ({ color, setFieldValue, value }) => (
+  <IconButton
+    aria-label="circle"
+    style={{ padding: "4px" }}
+    onClick={() => setFieldValue("status", !value)}
+  >
+    <SvgIcon>
+      <svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 32 32"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle cx="16" cy="16" r="15.5" fill="white" stroke={color} />
+        <path d="M23.5 11.5L13.5 21L9 16.5" stroke={color} strokeWidth="1.5" />
+      </svg>
+    </SvgIcon>
+  </IconButton>
+)
 
 const PersonIcon = () => (
   <IconButton aria-label="Person">
@@ -37,26 +62,35 @@ const PersonIcon = () => (
   </IconButton>
 )
 
-const styles = theme => ({
-  root: {
-    padding: "10%",
-    position: "relative",
-  },
-  container: {
-    padding: theme.spacing.unit,
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-  },
-  closeIcon: {
-    float: "right",
-  },
-})
+const styles = theme => {
+  return {
+    root: {
+      position: "relative",
+    },
+    container: {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+    },
+    closeIcon: {
+      float: "right",
+    },
+    titleInput: {
+      padding: `${theme.spacing.unit * 2}px 0`,
+    },
+    titleBase: {
+      textAlign: "center",
+    },
+    gridItems: {
+      flexGrow: 1,
+    },
+  }
+}
 class AddTaskForm extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { uid: "", anchorEl: null, userMenuOpen: false }
+    this.state = { userId: "", anchorEl: null, userMenuOpen: false }
     this.handleClose = this.handleClose.bind(this)
     this.handleClick = this.handleClick.bind(this)
   }
@@ -65,23 +99,23 @@ class AddTaskForm extends React.Component {
     this.setState({ userMenuOpen: false })
   }
   handleClick(event) {
-    console.log(event.currentTarget)
-    console.log(event.target)
-    this.setState({ anchorEl: event.currentTarget });
-    this.setState({ userMenuOpen : !this.state.userMenuOpen})
-  };
+    this.setState({ anchorEl: event.currentTarget })
+    this.setState({ userMenuOpen: !this.state.userMenuOpen })
+  }
 
   componentDidMount() {
-    let uid = localStorage.getItem("uid")
+    const uid = localStorage.getItem("uid")
     if (uid) {
-      this.setState({ uid })
+      console.log(uid)
+      this.setState({ userId: uid })
     }
   }
 
   render() {
     const { handleModal, classes } = this.props
-    const { anchorEl, userMenuOpen } = this.state
+    const { anchorEl, userMenuOpen, userId } = this.state
     const { handleClose, handleClick } = this
+    console.log('userId', userId)
     const ValidationSchema = Yup.object().shape({
       uid: Yup.string(),
       title: Yup.string().required("Need A title for this task"),
@@ -89,6 +123,7 @@ class AddTaskForm extends React.Component {
       priority: Yup.string().required("Need a priority level"),
       description: Yup.string(),
     })
+    console.log(userId)
 
     return (
       <div className={classes.root}>
@@ -101,11 +136,18 @@ class AddTaskForm extends React.Component {
               dueDate: "",
               priority: "",
               description: "",
+              status: false,
+              taskId: MakeId(),
+              createdBy: userId
             }}
-            onSubmit={(values, { setSubmitting, setErrors }) =>
+            onSubmit={(values, { setSubmitting, setErrors, setFieldValue }) => {
               console.log(values)
-            }
-            validationSchema={() => ValidationSchema}
+              AxiosPost("http://localhost:9000/add-task", {
+                refName: `/tasks/${values.taskId}`,
+                data: values,
+              })
+            }}
+            // validationSchema={() => ValidationSchema}
           >
             {({
               values,
@@ -115,19 +157,28 @@ class AddTaskForm extends React.Component {
               handleBlur,
               handleSubmit,
               isSubmitting,
-              setFieldValue
+              setFieldValue,
             }) => {
-              console.log(values)
               return (
                 <form action="submit">
                   <div>
-                    
                     <Button
                       aria-owns={anchorEl ? "simple-menu" : undefined}
                       aria-haspopup="true"
                       onClick={handleClick}
                     >
-                      <PersonIcon />ASSIGN TO {values.uid && <span>{values.uid}</span>}
+                      <PersonIcon />
+                      {values.uid && (
+                        <span>
+                          <Typography variant="caption">ASSIGNED TO</Typography>
+                          <Typography variant="body2">{values.uid}</Typography>
+                        </span>
+                      )}
+                      {!values.uid && (
+                        <span>
+                          <Typography variant="caption">ASSIGN TO</Typography>
+                        </span>
+                      )}
                     </Button>
                     <Menu
                       id="simple-menu"
@@ -136,27 +187,76 @@ class AddTaskForm extends React.Component {
                       open={userMenuOpen}
                       onClose={handleClose}
                     >
-                      <MenuItem name="uid" onClick={(e) => {handleClick(e); setFieldValue('uid', 'Jobin Mathew')}}>Jobin Mathew </MenuItem>
-                      <MenuItem name="uid" onClick={(e) => {handleClick(e); setFieldValue('uid', 'John Doe')}}>John Doe</MenuItem>
+                      <MenuItem
+                        name="uid"
+                        onClick={e => {
+                          handleClick(e)
+                          setFieldValue("uid", "Jobin Mathew")
+                        }}
+                      >
+                        Jobin Mathew{" "}
+                      </MenuItem>
+                      <MenuItem
+                        name="uid"
+                        onClick={e => {
+                          handleClick(e)
+                          setFieldValue("uid", "John Doe")
+                        }}
+                      >
+                        John Doe
+                      </MenuItem>
                     </Menu>
+                    <Divider />
+                    <InputBase
+                      name="title"
+                      onChange={handleChange}
+                      placeholder={"Add Title"}
+                      value={values.title}
+                      fullWidth
+                      className={classes.titleInput}
+                      inputProps={{ className: classes.titleBase }}
+                    />
+                    <Grid className={classes.gridItems} container spacing={16}>
+                      <Grid item xs={5}>
+                        <InputBase
+                          name="dueDate"
+                          onChange={handleChange}
+                          placeholder="Due Date"
+                        />
+                      </Grid>
+                      <Grid item xs={5}>
+                        <InputBase
+                          name="status"
+                          onChange={handleChange}
+                          placeholder="status"
+                        />
+                      </Grid>
+                      <Grid item xs={2}>
+                        <CheckCircleCustom
+                          fontSize="large"
+                          color={values.status ? "#D9AE4F" : "#CCCCCC"}
+                          setFieldValue={setFieldValue}
+                          value={values.status}
+                        />
+                      </Grid>
+                    </Grid>
+                    <Divider />
+                    <Typography variant="body2">Description</Typography>
+                    <InputBase
+                      name="description"
+                      value={values.description}
+                      onChange={handleChange}
+                      placeholder={"Add Description"}
+                      multiline
+                    />
                   </div>
+                  <Divider />
+                  <Button>Cancel</Button>
+                  <Button onClick={handleSubmit}>Save</Button>
                 </form>
               )
             }}
           </Formik>
-
-          {/* <Divider />
-          <InputBase
-            placeholder="Add Title"
-            style={{ textAlign: "center", width: "100%" }}
-          />
-          <Divider />
-          <div>Add Due Date</div>
-          <div>Add Priority</div>
-          <div>Add Description</div>
-          <div>Add Assets</div> */}
-          <Button>Cancel</Button>
-          <Button>Save</Button>
         </Paper>
       </div>
     )

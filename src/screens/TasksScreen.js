@@ -9,6 +9,7 @@ import withStyles from "@material-ui/core/styles/withStyles"
 
 import TaskTile from "../components/TaskTile"
 import AddTaskForm from "../components/AddTaskForm"
+import Firebase from "../services/Firebase"
 
 function TabContainer({ children, dir }) {
   return (
@@ -47,39 +48,52 @@ class TasksScreen extends React.Component {
   }
 
   render() {
-    const { classes } = this.props
+    const { classes, userState } = this.props
     const { tab } = this.state
     return (
-        <div>
-          {/* <AppBar position="static" color="default"> */}
-          <Tabs
-            value={this.state.tab}
-            onChange={this.handleTabChange}
-            indicatorColor="primary"
-            textColor="primary"
-            className={classes.tabWrapper}
-          >
-            <Tab label="To Do">To Do </Tab>
-            <Tab label="Completed">Completed </Tab>
-          </Tabs>
-          <Button
-            className={classes.buttonWrapper}
-            onClick={this.handleModal}
-            variant="flat"
-            color="primary"
-            fullWidth={false}
-          >
-            + New Ticket
-          </Button>
-          {/* </AppBar> */}
-          {tab === 0 && <TabContainer>To Do</TabContainer>}
-          {tab === 1 && <TabContainer>Completed</TabContainer>}
-          <TaskTile />
+      <div>
+        {/* <AppBar position="static" color="default"> */}
+        <Tabs
+          value={this.state.tab}
+          onChange={this.handleTabChange}
+          indicatorColor="primary"
+          textColor="primary"
+          className={classes.tabWrapper}
+        >
+          <Tab label="To Do">To Do </Tab>
+          <Tab label="Completed">Completed </Tab>
+        </Tabs>
+        <Button
+          className={classes.buttonWrapper}
+          onClick={this.handleModal}
+          variant="flat"
+          color="primary"
+          fullWidth={false}
+        >
+          + New Ticket
+        </Button>
+        {/* </AppBar> */}
+        {tab === 0 && <TabContainer>To Do</TabContainer>}
+        {tab === 1 && <TabContainer>Completed</TabContainer>}
+        <TaskTile />
 
-          <Modal open={this.state.open}>
-            <AddTaskForm handleModal={this.handleModal} />
-          </Modal>
-        </div>
+        <Modal open={this.state.open}>
+          <AddTaskForm handleModal={this.handleModal} />
+        </Modal>
+        <Button
+          onClick={() =>
+            Firebase.auth()
+              .signOut()
+              .then(function() {
+                localStorage.removeItem('idToken')
+                userState(false)
+              })
+              .catch(error => console.log(error))
+          }
+        >
+          Sign Out
+        </Button>
+      </div>
     )
   }
 }

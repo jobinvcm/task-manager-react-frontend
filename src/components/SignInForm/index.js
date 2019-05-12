@@ -5,6 +5,10 @@ import Input from "@material-ui/core/Input"
 import InputAdornment from "@material-ui/core/InputAdornment"
 import IconButton from "@material-ui/core/IconButton"
 import ArrowRightAlt from "@material-ui/icons/ArrowRightAlt"
+import { Formik } from "formik"
+import * as Yup from "yup"
+
+import Firebase from "../../services/Firebase"
 
 const styles = theme => ({
   root: {},
@@ -19,29 +23,37 @@ const styles = theme => ({
   inputProps: {
     marginLeft: "1.5rem",
   },
+  error: {
+    color: "red",
+  },
 })
 class SignInForm extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { username: "", password: "" }
-    this.handleChange = this.handleChange.bind(this)
-    this.handleSubmit = this.handleSubmit.bind(this)
+    this.state = { signedIn: "" }
+    this.onAuthStateChanged = this.onAuthStateChanged.bind(this)
   }
 
-  handleChange(e) {
-    this.setState({ [e.target.name]: e.target.value })
-  }
-
-  handleSubmit(e) {
-    console.log("handle bumit")
-    var _this = this
-    console.log(_this)
-    
+  onAuthStateChanged() {
+    Firebase.auth().onAuthStateChanged(user => {
+      Firebase.auth()
+        .currentUser.getIdToken(true)
+        .then(function(idToken) {
+          localStorage.setItem("idToken", idToken)
+        })
+      localStorage.setItem("uid", user.uid)
+    })
   }
 
   render() {
-    const { handleChange, handleSubmit } = this
-    const { classes } = this.props
+    const { classes, userState } = this.props
+    const { onAuthStateChanged } = this
+    const ValidationSchema = Yup.object().shape({
+      username: Yup.string()
+        .email("Username should be email")
+        .required("Username Required"),
+      password: Yup.string().required("PasswordRequired"),
+    })
     return (
       <div className={classes.root}>
         <div>
@@ -49,37 +61,86 @@ class SignInForm extends React.Component {
             Sign In
           </Typography>
         </div>
-        <form action="submit">
-          <div className={classes.formField}>
-            <Input
-              className={classes.input}
-              placeholder="User Name"
-              name="username"
-              type="email"
-              onChange={handleChange}
-              fullWidth
-              inputProps={{ className: classes.inputProps }}
-            />
-          </div>
-          <div className={classes.formField}>
-            <Input
-              className={classes.input}
-              placeholder="Password"
-              type="password"
-              name="password"
-              onChange={handleChange}
-              fullWidth
-              inputProps={{ className: classes.inputProps }}
-              endAdornment={
-                <InputAdornment position="end">
-                  <IconButton aria-label="Submit" onClick={handleSubmit}>
-                    <ArrowRightAlt />
-                  </IconButton>
-                </InputAdornment>
-              }
-            />
-          </div>
-        </form>
+        <Formik
+          initialValues={{ username: "", password: "" }}
+          onSubmit={(values, { setSubmitting, setErrors }) => {
+            Firebase.auth()
+              .signInWithEmailAndPassword(values.username, values.password)
+              .then(user => {
+                onAuthStateChanged()
+                userState({ signedIn: true })
+              })
+              .catch(error =>
+                setErrors({
+                  username: "Invalid Combination",
+                  password: "Invalid password",
+                })
+              )
+          }}
+          validationSchema={() => ValidationSchema}
+        >
+          {({
+            values,
+            errors,
+            touched,
+            handleChange,
+            handleBlur,
+            handleSubmit,
+            isSubmitting,
+          }) => {
+            return (
+              <form action="submit">
+                <div className={classes.formField}>
+                  <Input
+                    className={classes.input}
+                    placeholder="User Name"
+                    name="username"
+                    type="email"
+                    onChange={handleChange}
+                    fullWidth
+                    inputProps={{ className: classes.inputProps }}
+                    value={values.username}
+                    error={!!errors.username}
+                  />
+                  {errors.username && (
+                    <Typography variant="caption" className={classes.error}>
+                      {errors.username}
+                    </Typography>
+                  )}
+                </div>
+                <div className={classes.formField}>
+                  <Input
+                    className={classes.input}
+                    placeholder="Password"
+                    type="password"
+                    name="password"
+                    onChange={handleChange}
+                    fullWidth
+                    error={!!errors.password}
+                    inputProps={{ className: classes.inputProps }}
+                    value={values.password}
+                    endAdornment={
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="Submit"
+                          onClick={handleSubmit}
+                          type="submit"
+                        >
+                          <ArrowRightAlt />
+                        </IconButton>
+                      </InputAdornment>
+                    }
+                  />
+                  {errors.password && (
+                    <Typography variant="caption" className={classes.error}>
+                      {errors.password}
+                    </Typography>
+                  )}
+                </div>
+              </form>
+            )
+          }}
+        </Formik>
       </div>
     )
   }

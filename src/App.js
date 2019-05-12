@@ -1,5 +1,7 @@
 import React from "react"
 import { MuiThemeProvider, createMuiTheme } from "@material-ui/core/styles"
+import { MuiPickersUtilsProvider } from "material-ui-pickers"
+import DateFnsUtils from "@date-io/date-fns"
 import logo from "./logo.svg"
 import "./App.css"
 
@@ -23,34 +25,36 @@ const theme = createMuiTheme({
 class App extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {signedIn :'', uid: ''}
+    this.state = { signedIn: "", uid: "" }
     this.setUserStatus = this.setUserStatus.bind(this)
   }
 
   componentDidMount() {
     const _this = this
     SignedIn().then(response => {
-      console.log('response', response)
+      console.log("response", response)
       _this.setUserStatus(response.data)
     })
   }
 
-  setUserStatus({signedIn}) {
-    console.log('setUserState', signedIn)
+  setUserStatus({ signedIn }) {
+    console.log("setUserState", signedIn)
     this.setState({ signedIn })
   }
 
   render() {
     return (
-      <MuiThemeProvider
-        theme={theme}
-      >
-        <>
+      <MuiThemeProvider theme={theme}>
+        <MuiPickersUtilsProvider utils={DateFnsUtils}>
           <main>
-            {!this.state.signedIn && <LoginScreen userState={this.setUserStatus}/>}
-            {this.state.signedIn && <TasksScreen userState={this.setUserStatus} />}
+            {!this.state.signedIn && (
+              <LoginScreen userState={this.setUserStatus} />
+            )}
+            {this.state.signedIn && (
+              <TasksScreen userState={this.setUserStatus} />
+            )}
           </main>
-        </>
+        </MuiPickersUtilsProvider>
       </MuiThemeProvider>
     )
   }

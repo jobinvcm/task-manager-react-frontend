@@ -13,6 +13,8 @@ import MenuItem from "@material-ui/core/MenuItem"
 import Grid from "@material-ui/core/Grid"
 import { Formik } from "formik"
 import * as Yup from "yup"
+import { DatePicker, MuiPickersUtilsProvider } from "material-ui-pickers"
+import { InlineDatePicker } from "material-ui-pickers"
 
 import MakeId from "../../services/RandomIdGenerator"
 import AxiosPost from "../../services/Axios"
@@ -90,11 +92,20 @@ const styles = theme => {
 class AddTaskForm extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { userId: "", anchorEl: null, userMenuOpen: false }
+    this.state = {
+      userId: "",
+      anchorEl: null,
+      userMenuOpen: false,
+      openedCalendar: false,
+    }
     this.handleClose = this.handleClose.bind(this)
     this.handleClick = this.handleClick.bind(this)
+    this.openCalendar = this.openCalendar.bind(this)
   }
 
+  openCalendar() {
+    this.setState({ openedCalendar: true })
+  }
   handleClose() {
     this.setState({ userMenuOpen: false })
   }
@@ -113,8 +124,8 @@ class AddTaskForm extends React.Component {
 
   render() {
     const { handleModal, classes } = this.props
-    const { anchorEl, userMenuOpen, userId } = this.state
-    const { handleClose, handleClick } = this
+    const { anchorEl, userMenuOpen, userId, openedCalendar } = this.state
+    const { handleClose, handleClick, openCalendar } = this
     console.log("userId", userId)
     const ValidationSchema = Yup.object().shape({
       uid: Yup.string(),
@@ -134,7 +145,7 @@ class AddTaskForm extends React.Component {
               createdBy: "",
               uid: "",
               title: "",
-              dueDate: "",
+              dueDate: new Date(),
               priority: "",
               description: "",
               status: false,
@@ -218,11 +229,21 @@ class AddTaskForm extends React.Component {
                     />
                     <Grid className={classes.gridItems} container spacing={16}>
                       <Grid item xs={5}>
-                        <InputBase
-                          name="dueDate"
-                          onChange={handleChange}
-                          placeholder="Due Date"
-                        />
+                        {!openedCalendar && (
+                          <Button onClick={openCalendar}>
+                            <Typography variant="caption">
+                              Add Due Date
+                            </Typography>
+                          </Button>
+                        )}
+                        {openedCalendar && (
+                          <InlineDatePicker
+                            onlyCalendar
+                            label="Due Date"
+                            value={values.dueDate}
+                            onChange={e => setFieldValue("dueDate", e)}
+                          />
+                        )}
                       </Grid>
                       <Grid item xs={5}>
                         <InputBase

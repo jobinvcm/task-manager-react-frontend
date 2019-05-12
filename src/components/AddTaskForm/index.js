@@ -7,12 +7,15 @@ import IconButton from "@material-ui/core/IconButton"
 import SvgIcon from "@material-ui/core/SvgIcon"
 import Typography from "@material-ui/core/Typography"
 import Divider from "@material-ui/core/Divider"
-import InputBase from '@material-ui/core/InputBase';
-
+import InputBase from "@material-ui/core/InputBase"
+import Menu from "@material-ui/core/Menu"
+import MenuItem from "@material-ui/core/MenuItem"
+import { Formik } from "formik"
+import * as Yup from "yup"
 
 const PersonIcon = () => (
   <IconButton aria-label="Person">
-    <SvgIcon fontSize="large" style={{marginRight: "16px"}}>
+    <SvgIcon fontSize="large" style={{ marginRight: "16px" }}>
       <svg
         width="100%"
         height="100%"
@@ -31,10 +34,8 @@ const PersonIcon = () => (
         </g>
       </svg>
     </SvgIcon>
-    <Typography variant="caption">ASSIGN TO</Typography>
   </IconButton>
 )
-
 
 const styles = theme => ({
   root: {
@@ -55,24 +56,105 @@ const styles = theme => ({
 class AddTaskForm extends React.Component {
   constructor(props) {
     super(props)
+    this.state = { uid: "", anchorEl: null, userMenuOpen: false }
+    this.handleClose = this.handleClose.bind(this)
+    this.handleClick = this.handleClick.bind(this)
+  }
+
+  handleClose() {
+    this.setState({ userMenuOpen: false })
+  }
+  handleClick(event) {
+    console.log(event.currentTarget)
+    console.log(event.target)
+    this.setState({ anchorEl: event.currentTarget });
+    this.setState({ userMenuOpen : !this.state.userMenuOpen})
+  };
+
+  componentDidMount() {
+    let uid = localStorage.getItem("uid")
+    if (uid) {
+      this.setState({ uid })
+    }
   }
 
   render() {
     const { handleModal, classes } = this.props
+    const { anchorEl, userMenuOpen } = this.state
+    const { handleClose, handleClick } = this
+    const ValidationSchema = Yup.object().shape({
+      uid: Yup.string(),
+      title: Yup.string().required("Need A title for this task"),
+      dueDate: Yup.date(),
+      priority: Yup.string().required("Need a priority level"),
+      description: Yup.string(),
+    })
+
     return (
       <div className={classes.root}>
         <Paper className={classes.root}>
           <Close onClick={handleModal} className={classes.closeIcon} />
-          <div>
-            <PersonIcon />
-          </div>
-          <Divider />
-          <InputBase placeholder="Add Title" style={{textAlign: "center", width: "100%"}} />
+          <Formik
+            initialValues={{
+              uid: "",
+              title: "",
+              dueDate: "",
+              priority: "",
+              description: "",
+            }}
+            onSubmit={(values, { setSubmitting, setErrors }) =>
+              console.log(values)
+            }
+            validationSchema={() => ValidationSchema}
+          >
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              handleSubmit,
+              isSubmitting,
+              setFieldValue
+            }) => {
+              console.log(values)
+              return (
+                <form action="submit">
+                  <div>
+                    
+                    <Button
+                      aria-owns={anchorEl ? "simple-menu" : undefined}
+                      aria-haspopup="true"
+                      onClick={handleClick}
+                    >
+                      <PersonIcon />ASSIGN TO {values.uid && <span>{values.uid}</span>}
+                    </Button>
+                    <Menu
+                      id="simple-menu"
+                      name="uid"
+                      anchorEl={anchorEl}
+                      open={userMenuOpen}
+                      onClose={handleClose}
+                    >
+                      <MenuItem name="uid" onClick={(e) => {handleClick(e); setFieldValue('uid', 'Jobin Mathew')}}>Jobin Mathew </MenuItem>
+                      <MenuItem name="uid" onClick={(e) => {handleClick(e); setFieldValue('uid', 'John Doe')}}>John Doe</MenuItem>
+                    </Menu>
+                  </div>
+                </form>
+              )
+            }}
+          </Formik>
+
+          {/* <Divider />
+          <InputBase
+            placeholder="Add Title"
+            style={{ textAlign: "center", width: "100%" }}
+          />
           <Divider />
           <div>Add Due Date</div>
           <div>Add Priority</div>
           <div>Add Description</div>
-          <div>Add Assets</div>
+          <div>Add Assets</div> */}
           <Button>Cancel</Button>
           <Button>Save</Button>
         </Paper>

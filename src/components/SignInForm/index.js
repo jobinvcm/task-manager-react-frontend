@@ -36,12 +36,14 @@ class SignInForm extends React.Component {
 
   onAuthStateChanged() {
     Firebase.auth().onAuthStateChanged(user => {
-      Firebase.auth()
-        .currentUser.getIdToken(true)
-        .then(function(idToken) {
-          localStorage.setItem("idToken", idToken)
-        })
-      localStorage.setItem("uid", user.uid)
+      if (Firebase.auth().currentUser) {
+        Firebase.auth()
+          .currentUser.getIdToken(true)
+          .then(function(idToken) {
+            localStorage.setItem("idToken", idToken)
+          })
+        localStorage.setItem("uid", user.uid)
+      }
     })
   }
 

@@ -115,7 +115,7 @@ class AddTaskForm extends React.Component {
     const { handleModal, classes } = this.props
     const { anchorEl, userMenuOpen, userId } = this.state
     const { handleClose, handleClick } = this
-    console.log('userId', userId)
+    console.log("userId", userId)
     const ValidationSchema = Yup.object().shape({
       uid: Yup.string(),
       title: Yup.string().required("Need A title for this task"),
@@ -131,6 +131,7 @@ class AddTaskForm extends React.Component {
           <Close onClick={handleModal} className={classes.closeIcon} />
           <Formik
             initialValues={{
+              createdBy: "",
               uid: "",
               title: "",
               dueDate: "",
@@ -138,10 +139,9 @@ class AddTaskForm extends React.Component {
               description: "",
               status: false,
               taskId: MakeId(),
-              createdBy: userId
             }}
             onSubmit={(values, { setSubmitting, setErrors, setFieldValue }) => {
-              console.log(values)
+              values.createdBy = userId
               AxiosPost("http://localhost:9000/add-task", {
                 refName: `/tasks/${values.taskId}`,
                 data: values,
@@ -252,7 +252,14 @@ class AddTaskForm extends React.Component {
                   </div>
                   <Divider />
                   <Button>Cancel</Button>
-                  <Button onClick={handleSubmit}>Save</Button>
+                  <Button
+                    onClick={e => {
+                      handleSubmit(e)
+                      handleModal(e)
+                    }}
+                  >
+                    Save
+                  </Button>
                 </form>
               )
             }}

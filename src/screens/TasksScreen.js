@@ -7,6 +7,7 @@ import AppBar from "@material-ui/core/AppBar"
 import Typography from "@material-ui/core/Typography"
 import withStyles from "@material-ui/core/styles/withStyles"
 
+import AxiosPost from "../services/Axios"
 import TaskTile from "../components/TaskTile"
 import AddTaskForm from "../components/AddTaskForm"
 import Firebase from "../services/Firebase"
@@ -33,23 +34,32 @@ const styles = theme => ({
 class TasksScreen extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { open: false, tab: 0 }
+    this.state = { open: false, tab: 0, priorityStates: '' }
     this.handleModal = this.handleModal.bind(this)
     this.handleTabChange = this.handleTabChange.bind(this)
   }
 
+  componentDidMount() {
+    const _this = this
+    // AxiosPost("http://localhost:9000/get-all-tasks", {
+    //   refName: "/tasks"
+    // }).then(res => console.log(res))
+    AxiosPost("http://localhost:9000/get-all-content", {
+      refName: "priority"
+    }).then( res =>  _this.setState({priorityStates : res.data})).catch(error => console.log(error))
+  }
+  
   handleTabChange(e, tab) {
     this.setState({ tab })
   }
 
-  handleModal(e) {
-    e.stopPropagation()
+  handleModal() {
     this.setState({ open: !this.state.open })
   }
 
   render() {
     const { classes, userState } = this.props
-    const { tab } = this.state
+    const { tab, priorityStates } = this.state
     return (
       <div>
         {/* <AppBar position="static" color="default"> */}
@@ -77,7 +87,7 @@ class TasksScreen extends React.Component {
         <TaskTile />
 
         <Modal open={this.state.open}>
-          <AddTaskForm handleModal={this.handleModal} />
+          <AddTaskForm handleModal={this.handleModal} priorityStates={priorityStates}/>
         </Modal>
         <Button
           onClick={() =>

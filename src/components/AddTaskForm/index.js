@@ -13,11 +13,14 @@ import MenuItem from "@material-ui/core/MenuItem"
 import Grid from "@material-ui/core/Grid"
 import { Formik } from "formik"
 import * as Yup from "yup"
-import { DatePicker, MuiPickersUtilsProvider } from "material-ui-pickers"
 import { InlineDatePicker } from "material-ui-pickers"
+import FileUploader from "react-firebase-file-uploader"
+import CustomUploadButton from "react-firebase-file-uploader/lib/CustomUploadButton"
+import LinearProgress from "@material-ui/core/LinearProgress"
 
 import MakeId from "../../services/RandomIdGenerator"
 import AxiosPost from "../../services/Axios"
+import Firebase from "../../services/Firebase"
 
 const CheckCircleCustom = ({ color, setFieldValue, value }) => (
   <IconButton
@@ -40,9 +43,37 @@ const CheckCircleCustom = ({ color, setFieldValue, value }) => (
   </IconButton>
 )
 
-const PersonIcon = () => (
+const UploadIcon = () => (
+  <SvgIcon style={{ fontSize: "36px", cursor: "pointer" }}>
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect
+        x="1"
+        y="1"
+        width="99"
+        height="99"
+        stroke="black"
+        stroke-opacity="0.5"
+        stroke-miterlimit="16"
+        stroke-dasharray="4 4"
+      />
+      <path
+        d="M51.1395 49.56V58.08H48.8595V49.56H41.1795V47.48H48.8595V39.2H51.1395V47.48H58.8195V49.56H51.1395Z"
+        fill="black"
+        fill-opacity="0.5"
+      />
+    </svg>
+  </SvgIcon>
+)
+
+const PersonIcon = ({ children }) => (
   <IconButton aria-label="Person">
-    <SvgIcon fontSize="large" style={{ marginRight: "16px" }}>
+    <SvgIcon style={{ marginRight: "16px", fontSize: "40px" }}>
       <svg
         width="100%"
         height="100%"
@@ -61,13 +92,17 @@ const PersonIcon = () => (
         </g>
       </svg>
     </SvgIcon>
+    {children}
   </IconButton>
 )
 
 const styles = theme => {
+  console.log(theme)
   return {
     root: {
       position: "relative",
+      margin: "5%",
+      minHeight: "90vh",
     },
     container: {
       position: "absolute",
@@ -95,38 +130,89 @@ class AddTaskForm extends React.Component {
     this.state = {
       userId: "",
       anchorEl: null,
+      anchorElP: null,
       userMenuOpen: false,
+      priorityMenuOpen: false,
       openedCalendar: false,
+      fileName: "",
+      isUploading: false,
+      progress: 0,
+      avatarURL: "",
     }
     this.handleClose = this.handleClose.bind(this)
     this.handleClick = this.handleClick.bind(this)
     this.openCalendar = this.openCalendar.bind(this)
+    this.handleUploadStart = this.handleUploadStart.bind(this)
+    this.handleProgress = this.handleProgress.bind(this)
+    this.handleUploadError = this.handleUploadError.bind(this)
+    this.handleUploadSuccess = this.handleUploadSuccess.bind(this)
+    this.handleClickP = this.handleClickP.bind(this)
+    this.handleCloseP = this.handleCloseP.bind(this)
+    this.handleClickP = this.handleClickP.bind(this)
+  }
+
+  handleUploadStart = () => this.setState({ isUploading: true, progress: 0 })
+  handleProgress = progress => this.setState({ progress })
+  handleUploadError = error => {
+    this.setState({ isUploading: false })
+    console.error(error)
+  }
+  handleUploadSuccess = (filename, setFieldValue) => {
+    this.setState({ progress: 100, isUploading: false })
+
+    Firebase.storage()
+      .ref("images")
+      .child(filename)
+      .getDownloadURL()
+      .then(url => setFieldValue("fileUrl", url))
   }
 
   openCalendar() {
     this.setState({ openedCalendar: true })
   }
-  handleClose() {
+  handleClose(e) {
     this.setState({ userMenuOpen: false })
+  }
+  handleCloseP(e) {
+    this.setState({ priorityMenuOpen: false })
   }
   handleClick(event) {
     this.setState({ anchorEl: event.currentTarget })
     this.setState({ userMenuOpen: !this.state.userMenuOpen })
   }
+  handleClickP(event) {
+    this.setState({ anchorElP: event.currentTarget })
+    this.setState({ priorityMenuOpen: !this.state.priorityMenuOpen })
+  }
 
   componentDidMount() {
     const uid = localStorage.getItem("uid")
     if (uid) {
-      console.log(uid)
       this.setState({ userId: uid })
     }
   }
 
   render() {
-    const { handleModal, classes } = this.props
-    const { anchorEl, userMenuOpen, userId, openedCalendar } = this.state
-    const { handleClose, handleClick, openCalendar } = this
-    console.log("userId", userId)
+    const { handleModal, classes, priorityStates } = this.props
+    console.log(this.props)
+    const {
+      anchorElP,
+      anchorEl,
+      userMenuOpen,
+      priorityMenuOpen,
+      userId,
+      openedCalendar,
+      progress,
+      isUploading,
+    } = this.state
+    const {
+      handleClose,
+      handleCloseP,
+      handleClick,
+      handleClickP,
+      openCalendar,
+      handleUploadSuccess,
+    } = this
     const ValidationSchema = Yup.object().shape({
       uid: Yup.string(),
       title: Yup.string().required("Need A title for this task"),
@@ -137,156 +223,261 @@ class AddTaskForm extends React.Component {
     console.log(userId)
 
     return (
-      <div className={classes.root}>
-        <Paper className={classes.root}>
-          <Close onClick={handleModal} className={classes.closeIcon} />
-          <Formik
-            initialValues={{
-              createdBy: "",
-              uid: "",
-              title: "",
-              dueDate: new Date(),
-              priority: "",
-              description: "",
-              status: false,
-              taskId: MakeId(),
-            }}
-            onSubmit={(values, { setSubmitting, setErrors, setFieldValue }) => {
-              values.createdBy = userId
-              AxiosPost("http://localhost:9000/add-task", {
-                refName: `/tasks/${values.taskId}`,
-                data: values,
-              })
-            }}
-            // validationSchema={() => ValidationSchema}
-          >
-            {({
-              values,
-              errors,
-              touched,
-              handleChange,
-              handleBlur,
-              handleSubmit,
-              isSubmitting,
-              setFieldValue,
-            }) => {
-              return (
-                <form action="submit">
-                  <div>
-                    <Button
-                      aria-owns={anchorEl ? "simple-menu" : undefined}
-                      aria-haspopup="true"
-                      onClick={handleClick}
-                    >
-                      <PersonIcon />
-                      {values.uid && (
-                        <span>
-                          <Typography variant="caption">ASSIGNED TO</Typography>
-                          <Typography variant="body2">{values.uid}</Typography>
-                        </span>
-                      )}
-                      {!values.uid && (
-                        <span>
-                          <Typography variant="caption">ASSIGN TO</Typography>
-                        </span>
-                      )}
-                    </Button>
-                    <Menu
-                      id="simple-menu"
-                      name="uid"
-                      anchorEl={anchorEl}
-                      open={userMenuOpen}
-                      onClose={handleClose}
-                    >
-                      <MenuItem
-                        name="uid"
-                        onClick={e => {
-                          handleClick(e)
-                          setFieldValue("uid", "Jobin Mathew")
-                        }}
-                      >
-                        Jobin Mathew{" "}
-                      </MenuItem>
-                      <MenuItem
-                        name="uid"
-                        onClick={e => {
-                          handleClick(e)
-                          setFieldValue("uid", "John Doe")
-                        }}
-                      >
-                        John Doe
-                      </MenuItem>
-                    </Menu>
-                    <Divider />
-                    <InputBase
-                      name="title"
-                      onChange={handleChange}
-                      placeholder={"Add Title"}
-                      value={values.title}
-                      fullWidth
-                      className={classes.titleInput}
-                      inputProps={{ className: classes.titleBase }}
-                    />
-                    <Grid className={classes.gridItems} container spacing={16}>
-                      <Grid item xs={5}>
-                        {!openedCalendar && (
-                          <Button onClick={openCalendar}>
-                            <Typography variant="caption">
-                              Add Due Date
-                            </Typography>
-                          </Button>
-                        )}
-                        {openedCalendar && (
-                          <InlineDatePicker
-                            onlyCalendar
-                            label="Due Date"
-                            value={values.dueDate}
-                            onChange={e => setFieldValue("dueDate", e)}
-                          />
-                        )}
-                      </Grid>
-                      <Grid item xs={5}>
-                        <InputBase
-                          name="status"
-                          onChange={handleChange}
-                          placeholder="status"
-                        />
-                      </Grid>
-                      <Grid item xs={2}>
-                        <CheckCircleCustom
-                          fontSize="large"
-                          color={values.status ? "#D9AE4F" : "#CCCCCC"}
-                          setFieldValue={setFieldValue}
-                          value={values.status}
-                        />
-                      </Grid>
-                    </Grid>
-                    <Divider />
-                    <Typography variant="body2">Description</Typography>
-                    <InputBase
-                      name="description"
-                      value={values.description}
-                      onChange={handleChange}
-                      placeholder={"Add Description"}
-                      multiline
-                    />
-                  </div>
-                  <Divider />
-                  <Button>Cancel</Button>
+      <Paper className={classes.root}>
+        <Close
+          onClick={handleModal}
+          className={classes.closeIcon}
+          style={{ position: "absolute", right: 4, top: 4 }}
+        />
+        <Formik
+          initialValues={{
+            createdBy: "",
+            uid: "",
+            title: "",
+            dueDate: new Date(),
+            priority: "",
+            description: "",
+            status: false,
+            taskId: MakeId(),
+            fileUrl: "",
+          }}
+          onSubmit={(values, { setSubmitting, setErrors, setFieldValue }) => {
+            values.createdBy = userId
+            AxiosPost("http://localhost:9000/add-task", {
+              refName: `/tasks/${values.taskId}`,
+              data: values,
+            })
+            handleModal()
+          }}
+          // validationSchema={() => ValidationSchema}
+        >
+          {({
+            values,
+            errors,
+            touched,
+            handleChange,
+            handleBlur,
+            handleSubmit,
+            isSubmitting,
+            setFieldValue,
+          }) => {
+            return (
+              <form action="submit">
+                <div>
                   <Button
-                    onClick={e => {
-                      handleSubmit(e)
-                      handleModal(e)
-                    }}
+                    aria-owns={anchorEl ? "simple-menu" : undefined}
+                    aria-haspopup="true"
+                    onClick={handleClick}
+                    fullWidth
+                    style={{ justifyContent: "left", textAlign: "left" }}
+                  >
+                    <PersonIcon />
+                    {values.uid && (
+                      <span>
+                        <Typography variant="caption" color="disabled">
+                          ASSIGNED TO
+                        </Typography>
+                        <Typography variant="subtitle1">
+                          {values.uid}
+                        </Typography>
+                      </span>
+                    )}
+                    {!values.uid && (
+                      <span>
+                        <Typography variant="caption">ASSIGN TO</Typography>
+                      </span>
+                    )}
+                  </Button>
+                  <Menu
+                    id="simple-menu"
+                    name="uid"
+                    anchorEl={anchorEl}
+                    open={userMenuOpen}
+                    onClose={handleClose}
+                  >
+                    <MenuItem
+                      name="uid"
+                      onClick={e => {
+                        handleClick(e)
+                        setFieldValue("uid", "Jobin Mathew")
+                      }}
+                    >
+                      Jobin Mathew{" "}
+                    </MenuItem>
+                    <MenuItem
+                      name="uid"
+                      onClick={e => {
+                        handleClick(e)
+                        setFieldValue("uid", "John Doe")
+                      }}
+                    >
+                      John Doe
+                    </MenuItem>
+                  </Menu>
+                  <Divider />
+                  <InputBase
+                    name="title"
+                    onChange={handleChange}
+                    placeholder={"Add Title"}
+                    value={values.title}
+                    fullWidth
+                    className={classes.titleInput}
+                    inputProps={{ className: classes.titleBase }}
+                  />
+                  <Grid
+                    className={classes.gridItems}
+                    container
+                    spacing={0}
+                    style={{ padding: "0 8px" }}
+                  >
+                    <Grid item xs={5}>
+                      {!openedCalendar && (
+                        <Button
+                          onClick={openCalendar}
+                          style={{ paddingBottom: 0, verticalAlign: "sub" }}
+                        >
+                          <Typography variant="caption">
+                            Add Due Date
+                          </Typography>
+                        </Button>
+                      )}
+                      {openedCalendar && (
+                        <InlineDatePicker
+                          onlyCalendar
+                          label="Due Date"
+                          value={values.dueDate}
+                          onChange={e => setFieldValue("dueDate", e)}
+                        />
+                      )}
+                    </Grid>
+                    <Grid item xs={5}>
+                      <Button
+                        aria-owns={anchorElP ? "priority-menu" : undefined}
+                        aria-haspopup="true"
+                        onClick={handleClickP}
+                        fullWidth
+                        style={{ padding: 0, justifyContent: "left" }}
+                      >
+                        <Typography variant="caption" align="left" fullWidth>
+                          Add Priority
+                        </Typography>
+                      </Button>
+
+                      <Menu
+                        id="priority-menu"
+                        name="priority"
+                        anchorEl={anchorElP}
+                        open={priorityMenuOpen}
+                        onClose={handleCloseP}
+                      >
+                        {Object.keys(priorityStates).map(keyName => (
+                          <MenuItem
+                            name="priority"
+                            key={priorityStates[keyName].name}
+                            onClick={e => {
+                              handleClickP(e)
+                              setFieldValue(
+                                "priority",
+                                priorityStates[keyName].name
+                              )
+                            }}
+                          >
+                            {priorityStates[keyName].name}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                      {values.priority && (
+                        <Typography variant="body2">
+                          {values.priority}
+                        </Typography>
+                      )}
+                    </Grid>
+                    <Grid item xs={2}>
+                      <CheckCircleCustom
+                        fontSize="large"
+                        color={values.status ? "#D9AE4F" : "#CCCCCC"}
+                        setFieldValue={setFieldValue}
+                        value={values.status}
+                      />
+                    </Grid>
+                  </Grid>
+                  <Divider />
+                  <Grid container spacing={0}>
+                    <Grid item xs={12}>
+                      <Typography
+                        variant="body2"
+                        style={{ padding: "16px 0 0 16px" }}
+                      >
+                        Description
+                      </Typography>
+                      <InputBase
+                        name="description"
+                        value={values.description}
+                        onChange={e => setFieldValue("description", e.target.value)}
+                        placeholder={"Add Description"}
+                        multiline
+                        fullWidth
+                        style={{ padding: "16px", minHeight: "10vh" }}
+                      />
+                    </Grid>
+                  </Grid>
+                </div>
+                <Grid container spacing={0}>
+                  <Grid item xs={12}>
+                    <CustomUploadButton
+                      accept="image/*"
+                      name="avatar"
+                      randomizeFilename
+                      storageRef={Firebase.storage().ref(`images`)}
+                      onUploadStart={this.handleUploadStart}
+                      onUploadError={this.handleUploadError}
+                      onUploadSuccess={filename => {
+                        handleUploadSuccess(filename, setFieldValue)
+                      }}
+                      onProgress={this.handleProgress}
+                      style={{ paddingLeft: "8px", paddingBottom: "40px" }}
+                    >
+                      {!values.fileUrl && <UploadIcon />}
+                      {!!values.fileUrl && (
+                        <div
+                          style={{
+                            height: "44px",
+                            width: "44px",
+                            overflow: "hidden",
+                            position: "relative",
+                            marginLeft: "8px",
+                            backgroundImage: `url(${values.fileUrl})`,
+                            backgroundSize: "cover",
+                          }}
+                        />
+                      )}
+                    </CustomUploadButton>
+                  </Grid>
+                  {isUploading && (
+                    <div
+                      style={{ flexGrow: 1, minHeight: "4px", padding: "8px" }}
+                    >
+                      <LinearProgress variant="determinate" value={progress} />
+                      <span>progress</span>
+                    </div>
+                  )}
+                </Grid>
+
+                <Divider />
+                <div style={{ position: "absolute", right: "0", bottom: "0" }}>
+                  <Button onClick={handleModal}>Cancel</Button>
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={this.state.isUploading}
                   >
                     Save
                   </Button>
-                </form>
-              )
-            }}
-          </Formik>
-        </Paper>
-      </div>
+                </div>
+              </form>
+            )
+          }}
+        </Formik>
+      </Paper>
     )
   }
 }

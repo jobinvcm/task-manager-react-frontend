@@ -34,7 +34,7 @@ const styles = theme => ({
 class TasksScreen extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { open: false, tab: 0, priorityStates: '' }
+    this.state = { open: false, tab: 0, priorityStates: '', users: '' }
     this.handleModal = this.handleModal.bind(this)
     this.handleTabChange = this.handleTabChange.bind(this)
   }
@@ -47,6 +47,7 @@ class TasksScreen extends React.Component {
     AxiosPost("http://localhost:9000/get-all-content", {
       refName: "priority"
     }).then( res =>  _this.setState({priorityStates : res.data})).catch(error => console.log(error))
+    AxiosPost("http://localhost:9000/get-all-users", {}).then( res =>  _this.setState({users : res.data})).catch(error => console.log(error))
   }
   
   handleTabChange(e, tab) {
@@ -59,7 +60,7 @@ class TasksScreen extends React.Component {
 
   render() {
     const { classes, userState } = this.props
-    const { tab, priorityStates } = this.state
+    const { tab, priorityStates, users } = this.state
     return (
       <div>
         {/* <AppBar position="static" color="default"> */}
@@ -87,7 +88,7 @@ class TasksScreen extends React.Component {
         <TaskTile />
 
         <Modal open={this.state.open}>
-          <AddTaskForm handleModal={this.handleModal} priorityStates={priorityStates}/>
+          <AddTaskForm handleModal={this.handleModal} priorityStates={priorityStates} users={users}/>
         </Modal>
         <Button
           onClick={() =>

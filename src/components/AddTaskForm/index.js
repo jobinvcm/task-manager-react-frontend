@@ -14,7 +14,6 @@ import Grid from "@material-ui/core/Grid"
 import { Formik } from "formik"
 import * as Yup from "yup"
 import { InlineDatePicker } from "material-ui-pickers"
-import FileUploader from "react-firebase-file-uploader"
 import CustomUploadButton from "react-firebase-file-uploader/lib/CustomUploadButton"
 import LinearProgress from "@material-ui/core/LinearProgress"
 
@@ -193,7 +192,7 @@ class AddTaskForm extends React.Component {
   }
 
   render() {
-    const { handleModal, classes, priorityStates } = this.props
+    const { handleModal, classes, priorityStates, users } = this.props
     console.log(this.props)
     const {
       anchorElP,
@@ -278,7 +277,7 @@ class AddTaskForm extends React.Component {
                           ASSIGNED TO
                         </Typography>
                         <Typography variant="subtitle1">
-                          {values.uid}
+                          {users[values.uid].name}
                         </Typography>
                       </span>
                     )}
@@ -294,25 +293,19 @@ class AddTaskForm extends React.Component {
                     anchorEl={anchorEl}
                     open={userMenuOpen}
                     onClose={handleClose}
-                  >
-                    <MenuItem
+                  >{
+                    Object.keys(users).map(uid => 
+                      <MenuItem
                       name="uid"
                       onClick={e => {
                         handleClick(e)
-                        setFieldValue("uid", "Jobin Mathew")
+                        setFieldValue("uid", uid)
                       }}
                     >
-                      Jobin Mathew{" "}
-                    </MenuItem>
-                    <MenuItem
-                      name="uid"
-                      onClick={e => {
-                        handleClick(e)
-                        setFieldValue("uid", "John Doe")
-                      }}
-                    >
-                      John Doe
-                    </MenuItem>
+                      {users[uid].name}
+                    </MenuItem>)
+                  }
+
                   </Menu>
                   <Divider />
                   <InputBase

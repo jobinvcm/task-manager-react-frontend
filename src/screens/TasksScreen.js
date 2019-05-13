@@ -34,22 +34,32 @@ const styles = theme => ({
 class TasksScreen extends React.Component {
   constructor(props) {
     super(props)
-    this.state = { open: false, tab: 0, priorityStates: '', users: '' }
+    this.state = {
+      open: false,
+      tab: 0,
+      priorityStates: "",
+      users: "",
+      tasks: "",
+    }
     this.handleModal = this.handleModal.bind(this)
     this.handleTabChange = this.handleTabChange.bind(this)
   }
 
   componentDidMount() {
     const _this = this
-    // AxiosPost("http://localhost:9000/get-all-tasks", {
-    //   refName: "/tasks"
-    // }).then(res => console.log(res))
     AxiosPost("http://localhost:9000/get-all-content", {
-      refName: "priority"
-    }).then( res =>  _this.setState({priorityStates : res.data})).catch(error => console.log(error))
-    AxiosPost("http://localhost:9000/get-all-users", {}).then( res =>  _this.setState({users : res.data})).catch(error => console.log(error))
+      refName: "/tasks",
+    }).then(res => _this.setState({ tasks: res.data }))
+    AxiosPost("http://localhost:9000/get-all-content", {
+      refName: "priority",
+    })
+      .then(res => _this.setState({ priorityStates: res.data }))
+      .catch(error => console.log(error))
+    AxiosPost("http://localhost:9000/get-all-users", {})
+      .then(res => _this.setState({ users: res.data }))
+      .catch(error => console.log(error))
   }
-  
+
   handleTabChange(e, tab) {
     this.setState({ tab })
   }
@@ -60,7 +70,7 @@ class TasksScreen extends React.Component {
 
   render() {
     const { classes, userState } = this.props
-    const { tab, priorityStates, users } = this.state
+    const { tab, priorityStates, users, tasks } = this.state
     return (
       <div>
         {/* <AppBar position="static" color="default"> */}
@@ -85,17 +95,23 @@ class TasksScreen extends React.Component {
         {/* </AppBar> */}
         {tab === 0 && <TabContainer>To Do</TabContainer>}
         {tab === 1 && <TabContainer>Completed</TabContainer>}
-        <TaskTile />
+        {Object.keys(tasks).map(taskId => (
+          <TaskTile task={tasks[taskId]} taskId={taskId} />
+        ))}
 
         <Modal open={this.state.open}>
-          <AddTaskForm handleModal={this.handleModal} priorityStates={priorityStates} users={users}/>
+          <AddTaskForm
+            handleModal={this.handleModal}
+            priorityStates={priorityStates}
+            users={users}
+          />
         </Modal>
         <Button
           onClick={() =>
             Firebase.auth()
               .signOut()
               .then(function() {
-                localStorage.removeItem('idToken')
+                localStorage.removeItem("idToken")
                 userState(false)
               })
               .catch(error => console.log(error))

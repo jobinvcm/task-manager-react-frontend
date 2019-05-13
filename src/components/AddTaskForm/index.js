@@ -193,7 +193,6 @@ class AddTaskForm extends React.Component {
 
   render() {
     const { handleModal, classes, priorityStates, users } = this.props
-    console.log(this.props)
     const {
       anchorElP,
       anchorEl,
@@ -219,7 +218,6 @@ class AddTaskForm extends React.Component {
       priority: Yup.string().required("Need a priority level"),
       description: Yup.string(),
     })
-    console.log(userId)
 
     return (
       <Paper className={classes.root}>

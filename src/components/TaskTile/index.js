@@ -16,7 +16,8 @@ const styles = theme => ({
   userImage: {
     borderRadius: '50%',
     backgroundColor: 'grey',
-    height: '100%',
+    height: '50px',
+    width: '50px'
   },
   checkIcon: {
     height: '100%',
@@ -30,17 +31,17 @@ class TaskTile extends React.Component {
   }
 
   render() {
-    const { classes } = this.props;
+    const { classes, task, taskId } = this.props;
     return (
       <Paper className={classes.root}>
-        <Grid container spacing={16}>
+        <Grid container spacing={0}>
           <Grid item xs={2} className={classes.gridImage}>
             <div className={classes.userImage}></div>
           </Grid>
           <Grid item xs={6}>
             <div>
-              <Typography variant="subheading">John Doe</Typography>
-              <Typography variant="caption">Due Date: 24 Feb 2019</Typography>
+              {task.title && <Typography variant="subheading">{task.title}</Typography>}
+              {task.dueDate && <Typography variant="caption">{task.dueDate}</Typography>}
             </div>
           </Grid>
           <Grid item xs={4}>

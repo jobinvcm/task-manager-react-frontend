@@ -29,6 +29,9 @@ const styles = theme => ({
     padding: `${theme.spacing.unit * 2}px`,
     float: "right",
   },
+  taskTile: {
+    paddign: "12px"
+  }
 })
 
 class TasksScreen extends React.Component {
@@ -73,6 +76,7 @@ class TasksScreen extends React.Component {
     const { tab, priorityStates, users, tasks } = this.state
     return (
       <div>
+        <Typography variant="h3" component="h1">My Tasks</Typography>
         {/* <AppBar position="static" color="default"> */}
         <Tabs
           value={this.state.tab}
@@ -96,9 +100,8 @@ class TasksScreen extends React.Component {
         {tab === 0 && <TabContainer>To Do</TabContainer>}
         {tab === 1 && <TabContainer>Completed</TabContainer>}
         {Object.keys(tasks).map(taskId => (
-          <TaskTile task={tasks[taskId]} taskId={taskId} />
+          <TaskTile className={classes.taskTile} task={tasks[taskId]} taskId={taskId} />
         ))}
-
         <Modal open={this.state.open}>
           <AddTaskForm
             handleModal={this.handleModal}

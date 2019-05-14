@@ -1,7 +1,6 @@
 import React from "react"
 import Button from "@material-ui/core/Button"
 import Paper from "@material-ui/core/Paper"
-import Close from "@material-ui/icons/Close"
 import withStyles from "@material-ui/core/styles/withStyles"
 import IconButton from "@material-ui/core/IconButton"
 import SvgIcon from "@material-ui/core/SvgIcon"
@@ -190,8 +189,8 @@ class AddTaskForm extends React.Component {
       this.setState({ userId: uid })
     }
 
-    if(this.props.taskPassed && this.props.taskPassed.dueDate) {
-      this.setState({openedCalendar : true})
+    if (this.props.taskPassed && this.props.taskPassed.dueDate) {
+      this.setState({ openedCalendar: true })
     }
   }
 
@@ -221,6 +220,7 @@ class AddTaskForm extends React.Component {
       openCalendar,
       handleUploadSuccess,
     } = this
+    console.log(taskPassed)
     const ValidationSchema = Yup.object().shape({
       uid: Yup.string(),
       title: Yup.string().required("Need A title for this task"),
@@ -233,28 +233,37 @@ class AddTaskForm extends React.Component {
       <Paper className={classes.root}>
         <Formik
           initialValues={{
-            createdBy: taskPassed ? taskPassed.createdBy : "",
-            uid: taskPassed ? taskPassed.uid : "",
-            title: taskPassed ? taskPassed.title : "",
-            dueDate: taskPassed ? taskPassed.dueDate : "",
-            dueDateTimestamp: taskPassed ? taskPassed.dueDateTimestamp : "",
-            priority: taskPassed ? taskPassed.priority : "",
-            description: taskPassed ? taskPassed.description : "",
-            status: taskPassed ? taskPassed.status : false,
-            taskId: taskPassed ? taskPassed.taskId : MakeId(),
-            fileUrl: taskPassed ? taskPassed.fileUrl : "",
+            createdBy:
+              taskPassed && taskPassed.createdBy ? taskPassed.createdBy : "",
+            uid: taskPassed && taskPassed.uid ? taskPassed.uid : "",
+            title: taskPassed && taskPassed.title ? taskPassed.title : "",
+            dueDate: taskPassed && taskPassed.dueDate ? taskPassed.dueDate : "",
+            dueDateTimestamp:
+              taskPassed && taskPassed.dueDateTimestamp
+                ? taskPassed.dueDateTimestamp
+                : "",
+            priority:
+              taskPassed && taskPassed.priority ? taskPassed.priority : "",
+            description:
+              taskPassed && taskPassed.description
+                ? taskPassed.description
+                : "",
+            status: taskPassed && taskPassed.status ? taskPassed.status : false,
+            taskId:
+              taskPassed && taskPassed.taskId ? taskPassed.taskId : MakeId(),
+            fileUrl: taskPassed && taskPassed.fileUrl ? taskPassed.fileUrl : "",
           }}
           onSubmit={(values, { setSubmitting, setErrors, setFieldValue }) => {
             values.createdBy = userId
             if (values.dueDate) {
-              const timestamp = new Date(values.dueDate).getTime();
+              const timestamp = new Date(values.dueDate).getTime()
               values.dueDateTimestamp = timestamp
             }
+            console.log(values)
             AxiosPost("http://localhost:9000/add-task", {
               refName: `/tasks/${values.taskId}`,
               data: values,
-            }).then(res => {
-            })
+            }).then(res => {})
             handleModal(values)
           }}
           validationSchema={() => ValidationSchema}

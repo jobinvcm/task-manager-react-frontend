@@ -53,6 +53,7 @@ class TasksScreen extends React.Component {
     this.getTodaysTasks = this.getTodaysTasks.bind(this)
     this.getAllTasks = this.getAllTasks.bind(this)
     this.toggleStatus = this.toggleStatus.bind(this)
+    this.getWeeksTasks = this.getWeeksTasks.bind(this)
   }
 
   signOut() {
@@ -65,6 +66,15 @@ class TasksScreen extends React.Component {
       })
       .catch(error => console.log(error))
   }
+  getWeeksTasks() {
+    const _this = this
+    AxiosPost("http://localhost:9000/get-weeks-tasks", {})
+      .then(res => {
+        _this.setState({ doneTasks: res.data.tasksDone })
+        _this.setState({ todoTasks: res.data.tasksNotDone })
+      })
+      .catch(error => console.log(error))
+  }
   getAllTasks() {
     const _this = this
     AxiosPost("http://localhost:9000/get-all-tasks-done", {}).then(res => {
@@ -74,6 +84,7 @@ class TasksScreen extends React.Component {
     })
     AxiosPost("http://localhost:9000/get-all-tasks-not-done", {}).then(res => {
       if (res && res.data) {
+        console.log(res)
         _this.setState({ todoTasks: res.data })
       }
     })
@@ -127,14 +138,12 @@ class TasksScreen extends React.Component {
     if (!task) {
       return
     }
-    console.log('tasks', task)
-    console.log('state', this.state)
-    if (task.status) {
-      const doneTasks = this.state.doneTasks
+    if (this.state.doneTasks.hasOwnProperty(task.taskId)) {
+      var doneTasks = this.state.doneTasks
       doneTasks[task.taskId].status = !task.status
       this.setState({ doneTasks: doneTasks })
     } else {
-      const todoTasks = this.state.todoTasks
+      var todoTasks = this.state.todoTasks
       todoTasks[task.taskId].status = !task.status
       this.setState({ todoTasks: todoTasks })
     }
@@ -143,15 +152,22 @@ class TasksScreen extends React.Component {
   render() {
     const { classes, userState } = this.props
     const { tab, priorityStates, users, todoTasks, doneTasks } = this.state
-    const { getTodaysTasks, handleModal, toggleStatus, getAllTasks } = this
+    console.log(todoTasks, doneTasks)
+    const {
+      getTodaysTasks,
+      handleModal,
+      toggleStatus,
+      getAllTasks,
+      getWeeksTasks,
+    } = this
     return (
       <div>
         <Header
           signOut={this.signOut}
           getTodaysTasks={getTodaysTasks}
           getAllTasks={getAllTasks}
+          getWeeksTasks={getWeeksTasks}
         />
-        {/* <AppBar position="static" color="default"> */}
         <Tabs
           value={this.state.tab}
           onChange={this.handleTabChange}
@@ -170,7 +186,6 @@ class TasksScreen extends React.Component {
         >
           + New Ticket
         </Button>
-        {/* </AppBar> */}
 
         {tab === 0 && (
           <TabContainer>

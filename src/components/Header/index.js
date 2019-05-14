@@ -33,7 +33,7 @@ class Header extends React.Component {
   render() {
     const { open } = this.state
     const { handleClick } = this
-    const { classes, signOut, getTodaysTasks, getAllTasks } = this.props
+    const { classes, signOut, getTodaysTasks, getAllTasks, getWeeksTasks } = this.props
 
     return (
       <div>
@@ -83,6 +83,10 @@ class Header extends React.Component {
                   <Divider />
                   <Button fullWidth onClick={() => {getTodaysTasks(); handleClick();}}>
                     TODAY
+                  </Button>
+                  <Divider />
+                  <Button fullWidth onClick={() => {getWeeksTasks(); handleClick();}}>
+                    GET WEEKS TASKS
                   </Button>
                   <Divider />
                   <Button fullWidth onClick={signOut}>

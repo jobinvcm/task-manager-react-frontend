@@ -3,7 +3,6 @@ import Modal from "@material-ui/core/Modal"
 import Button from "@material-ui/core/Button"
 import Tabs from "@material-ui/core/Tabs"
 import Tab from "@material-ui/core/Tab"
-import AppBar from "@material-ui/core/AppBar"
 import Typography from "@material-ui/core/Typography"
 import withStyles from "@material-ui/core/styles/withStyles"
 
@@ -11,6 +10,7 @@ import AxiosPost from "../services/Axios"
 import TaskTile from "../components/TaskTile"
 import AddTaskForm from "../components/AddTaskForm"
 import Firebase from "../services/Firebase"
+import Header from "../components/Header"
 
 function TabContainer({ children, dir }) {
   return (
@@ -30,8 +30,8 @@ const styles = theme => ({
     float: "right",
   },
   taskTile: {
-    paddign: "12px"
-  }
+    paddign: "12px",
+  },
 })
 
 class TasksScreen extends React.Component {
@@ -43,16 +43,44 @@ class TasksScreen extends React.Component {
       priorityStates: "",
       users: "",
       tasks: "",
+      todoTasks: "",
+      doneTasks: "",
+      selectedTask: ""
     }
     this.handleModal = this.handleModal.bind(this)
     this.handleTabChange = this.handleTabChange.bind(this)
+    this.signOut = this.signOut.bind(this)
+    this.getTodaysTasks = this.getTodaysTasks.bind(this)
+    this.getAllTasks = this.getAllTasks.bind(this)
+    this.toggleStatus = this.toggleStatus.bind(this)
   }
 
+  signOut() {
+    const _this = this
+    Firebase.auth()
+      .signOut()
+      .then(function() {
+        localStorage.removeItem("idToken")
+        _this.props.userState(false)
+      })
+      .catch(error => console.log(error))
+  }
+  getAllTasks() {
+    const _this = this
+    AxiosPost("http://localhost:9000/get-all-tasks-done", {}).then(res => {
+      if (res && res.data) {
+        _this.setState({ doneTasks: res.data })
+      }
+    })
+    AxiosPost("http://localhost:9000/get-all-tasks-not-done", {}).then(res => {
+      if (res && res.data) {
+        _this.setState({ todoTasks: res.data })
+      }
+    })
+  }
   componentDidMount() {
     const _this = this
-    AxiosPost("http://localhost:9000/get-all-content", {
-      refName: "/tasks",
-    }).then(res => _this.setState({ tasks: res.data }))
+    _this.getAllTasks()
     AxiosPost("http://localhost:9000/get-all-content", {
       refName: "priority",
     })
@@ -62,21 +90,58 @@ class TasksScreen extends React.Component {
       .then(res => _this.setState({ users: res.data }))
       .catch(error => console.log(error))
   }
-
+  getTodaysTasks() {
+    const _this = this
+    AxiosPost("http://localhost:9000/get-todays-tasks", {})
+      .then(res => {
+        _this.setState({ doneTasks: res.data.tasksDone })
+        _this.setState({ todoTasks: res.data.tasksNotDone })
+      })
+      .catch(error => console.log(error))
+  }
   handleTabChange(e, tab) {
     this.setState({ tab })
   }
-
-  handleModal() {
-    this.setState({ open: !this.state.open })
+  handleModal(task="") {
+    const open = this.state.open
+    this.setState({ open: !open })
+    if (open) {
+      this.getAllTasks()
+    }
+    if ( task && (this.state.selectedTask !== task)) {
+        if (this.state.selectedTask.status) {
+          const doneTasks = this.state.doneTasks
+          doneTasks[task.taskId] = task
+          this.setState({ doneTasks: doneTasks })
+        } else {
+          const todoTasks = this.state.todoTasks
+          todoTasks[task.taskId] = task
+          this.setState({ todoTasks: todoTasks })
+        }
+      }
+    if(task) {
+      this.setState({"selectedTask": task})
+    }
+  }
+  toggleStatus(task) {
+    if (task.status) {
+      const doneTasks = this.state.doneTasks
+      doneTasks[task.taskId].status = !task.status
+      this.setState({ doneTasks: doneTasks })
+    } else {
+      const todoTasks = this.state.todoTasks
+      todoTasks[task.taskId].status = !task.status
+      this.setState({ todoTasks: todoTasks })
+    }
   }
 
   render() {
     const { classes, userState } = this.props
-    const { tab, priorityStates, users, tasks } = this.state
+    const { tab, priorityStates, users, todoTasks, doneTasks } = this.state
+    const { getTodaysTasks, handleModal, toggleStatus } = this
     return (
       <div>
-        <Typography variant="h3" component="h1">My Tasks</Typography>
+        <Header signOut={this.signOut} getTodaysTasks={getTodaysTasks} />
         {/* <AppBar position="static" color="default"> */}
         <Tabs
           value={this.state.tab}
@@ -90,7 +155,7 @@ class TasksScreen extends React.Component {
         </Tabs>
         <Button
           className={classes.buttonWrapper}
-          onClick={this.handleModal}
+          onClick={handleModal}
           color="primary"
           fullWidth={false}
         >
@@ -98,31 +163,45 @@ class TasksScreen extends React.Component {
         </Button>
         {/* </AppBar> */}
 
-        {tab === 0 && <TabContainer>To Do</TabContainer>}
-        {tab === 1 && <TabContainer>Completed</TabContainer>}
-        {Object.keys(tasks).map(taskId => (
-          <TaskTile className={classes.taskTile} task={tasks[taskId]} taskId={taskId} />
-        ))}
+        {tab === 0 && (
+          <TabContainer>
+            {todoTasks &&
+              Object.keys(todoTasks).map(taskId => (
+                <TaskTile
+                  className={classes.taskTile}
+                  task={todoTasks[taskId]}
+                  taskId={taskId}
+                  toggleTileStatus={toggleStatus}
+                  openModal={handleModal}
+                />
+              ))}
+            {!todoTasks && <div>Nothing To Do</div>}
+          </TabContainer>
+        )}
+        {tab === 1 && (
+          <TabContainer>
+            {doneTasks &&
+              Object.keys(doneTasks).map(taskId => (
+                <TaskTile
+                  className={classes.taskTile}
+                  task={doneTasks[taskId]}
+                  taskId={taskId}
+                  toggleTileStatus={toggleStatus}
+                />
+              ))}
+            {!doneTasks && <div>No Tasks Found</div>}
+          </TabContainer>
+        )}
+
         <Modal open={this.state.open}>
           <AddTaskForm
             handleModal={this.handleModal}
             priorityStates={priorityStates}
             users={users}
+            taskPassed={this.state.selectedTask}
           />
         </Modal>
-        <Button
-          onClick={() =>
-            Firebase.auth()
-              .signOut()
-              .then(function() {
-                localStorage.removeItem("idToken")
-                userState(false)
-              })
-              .catch(error => console.log(error))
-          }
-        >
-          Sign Out
-        </Button>
+        <Button onClick={() => this.signOut()}>Sign Out</Button>
       </div>
     )
   }

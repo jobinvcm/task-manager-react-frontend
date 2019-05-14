@@ -72,11 +72,15 @@ class TaskTile extends React.Component {
   }
 
   toggleStatus(status, taskId) {
+    const _this = this
+    _this.setState({ status: !status })
+    const task = _this.props.task
+    _this.props.toggleTileStatus(task)
     AxiosPost("http://localhost:9000/add-task", {
       refName: `/tasks/${taskId}/status`,
       data: !status,
     })
-    this.setState({ status: !status })
+
   }
 
   componentDidMount() {
@@ -85,7 +89,7 @@ class TaskTile extends React.Component {
   }
 
   render() {
-    const { classes, task, taskId } = this.props
+    const { classes, task, taskId, openModal } = this.props
     const { toggleStatus } = this
     const { status } = this.state
     return (
@@ -95,7 +99,7 @@ class TaskTile extends React.Component {
             <div className={classes.userImage} />
           </Grid>
           <Grid item xs={8}>
-            <div>
+            <div onClick={() => openModal(task)}>
               {task.title && (
                 <Typography variant="subheading">{task.title}</Typography>
               )}

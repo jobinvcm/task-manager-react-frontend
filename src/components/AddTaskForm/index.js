@@ -189,10 +189,20 @@ class AddTaskForm extends React.Component {
     if (uid) {
       this.setState({ userId: uid })
     }
+
+    if(this.props.taskPassed && this.props.taskPassed.dueDate) {
+      this.setState({openedCalendar : true})
+    }
   }
 
   render() {
-    const { handleModal, classes, priorityStates, users } = this.props
+    const {
+      handleModal,
+      classes,
+      priorityStates,
+      users,
+      taskPassed,
+    } = this.props
     const {
       anchorElP,
       anchorEl,
@@ -215,38 +225,42 @@ class AddTaskForm extends React.Component {
       uid: Yup.string(),
       title: Yup.string().required("Need A title for this task"),
       dueDate: Yup.date(),
-      priority: Yup.string().required("Need a priority level"),
+      priority: Yup.string(),
       description: Yup.string(),
     })
 
     return (
       <Paper className={classes.root}>
-        <Close
-          onClick={handleModal}
-          className={classes.closeIcon}
-          style={{ position: "absolute", right: 4, top: 4 }}
-        />
         <Formik
           initialValues={{
-            createdBy: "",
-            uid: "",
-            title: "",
-            dueDate: new Date(),
-            priority: "",
-            description: "",
-            status: false,
-            taskId: MakeId(),
-            fileUrl: "",
+            createdBy: taskPassed ? taskPassed.createdBy : "",
+            uid: taskPassed ? taskPassed.uid : "",
+            title: taskPassed ? taskPassed.title : "",
+            dueDate: taskPassed ? taskPassed.dueDate : "",
+            dueDateTimesamp: taskPassed ? taskPassed.dueDateTimesamp : "",
+            priority: taskPassed ? taskPassed.priority : "",
+            description: taskPassed ? taskPassed.description : "",
+            status: taskPassed ? taskPassed.status : false,
+            taskId: taskPassed ? taskPassed.taskId : MakeId(),
+            fileUrl: taskPassed ? taskPassed.fileUrl : "",
           }}
           onSubmit={(values, { setSubmitting, setErrors, setFieldValue }) => {
             values.createdBy = userId
+            if (values.dueDate) {
+              setFieldValue(
+                "dueDateTimesamp",
+                new Date(values.dueDate).getTime()
+              )
+            }
+            console.log(values)
             AxiosPost("http://localhost:9000/add-task", {
               refName: `/tasks/${values.taskId}`,
               data: values,
+            }).then(res => {
             })
-            handleModal()
+            handleModal(values)
           }}
-          // validationSchema={() => ValidationSchema}
+          validationSchema={() => ValidationSchema}
         >
           {({
             values,
@@ -258,6 +272,7 @@ class AddTaskForm extends React.Component {
             isSubmitting,
             setFieldValue,
           }) => {
+            console.log(errors)
             return (
               <form action="submit">
                 <div>
@@ -291,19 +306,18 @@ class AddTaskForm extends React.Component {
                     anchorEl={anchorEl}
                     open={userMenuOpen}
                     onClose={handleClose}
-                  >{
-                    Object.keys(users).map(uid => 
+                  >
+                    {Object.keys(users).map(uid => (
                       <MenuItem
-                      name="uid"
-                      onClick={e => {
-                        handleClick(e)
-                        setFieldValue("uid", uid)
-                      }}
-                    >
-                      {users[uid].name}
-                    </MenuItem>)
-                  }
-
+                        name="uid"
+                        onClick={e => {
+                          handleClick(e)
+                          setFieldValue("uid", uid)
+                        }}
+                      >
+                        {users[uid].name}
+                      </MenuItem>
+                    ))}
                   </Menu>
                   <Divider />
                   <InputBase
@@ -314,7 +328,17 @@ class AddTaskForm extends React.Component {
                     fullWidth
                     className={classes.titleInput}
                     inputProps={{ className: classes.titleBase }}
+                    error={errors.title && touched.title}
                   />
+                  {errors.title && touched.title && (
+                    <Typography
+                      align="center"
+                      variant="caption"
+                      style={{ color: "red" }}
+                    >
+                      {errors.title}
+                    </Typography>
+                  )}
                   <Grid
                     className={classes.gridItems}
                     container
@@ -336,8 +360,10 @@ class AddTaskForm extends React.Component {
                         <InlineDatePicker
                           onlyCalendar
                           label="Due Date"
-                          value={values.dueDate}
-                          onChange={e => setFieldValue("dueDate", e)}
+                          value={values.dueDate ? values.dueDate : new Date()}
+                          onChange={e => {
+                            setFieldValue("dueDate", new Date(e).toDateString())
+                          }}
                         />
                       )}
                     </Grid>
@@ -404,7 +430,9 @@ class AddTaskForm extends React.Component {
                       <InputBase
                         name="description"
                         value={values.description}
-                        onChange={e => setFieldValue("description", e.target.value)}
+                        onChange={e =>
+                          setFieldValue("description", e.target.value)
+                        }
                         placeholder={"Add Description"}
                         multiline
                         fullWidth

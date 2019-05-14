@@ -97,6 +97,7 @@ class TasksScreen extends React.Component {
           + New Ticket
         </Button>
         {/* </AppBar> */}
+
         {tab === 0 && <TabContainer>To Do</TabContainer>}
         {tab === 1 && <TabContainer>Completed</TabContainer>}
         {Object.keys(tasks).map(taskId => (

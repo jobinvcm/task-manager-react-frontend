@@ -8,12 +8,14 @@ import CheckCircle from "@material-ui/icons/CheckCircleOutlined"
 import IconButton from "@material-ui/core/IconButton"
 import SvgIcon from "@material-ui/core/SvgIcon"
 import grey from "@material-ui/core/colors/grey"
+import format from "date-fns/format"
+
 import AxiosPost from "../../services/Axios"
 
 const CheckCircleCustom = ({ toggleStatus, status, taskId }) => (
   <IconButton
     aria-label="circle"
-    style={{ padding: "4px" }}
+    style={{ padding: "4px", float: "right" }}
     onClick={() => toggleStatus(status, taskId)}
   >
     <SvgIcon>
@@ -85,24 +87,24 @@ class TaskTile extends React.Component {
   render() {
     const { classes, task, taskId } = this.props
     const { toggleStatus } = this
-    const {status} = this.state
+    const { status } = this.state
     return (
       <Paper className={classes.root}>
         <Grid container spacing={0}>
           <Grid item xs={2} className={classes.gridImage}>
             <div className={classes.userImage} />
           </Grid>
-          <Grid item xs={6}>
+          <Grid item xs={8}>
             <div>
               {task.title && (
                 <Typography variant="subheading">{task.title}</Typography>
               )}
               {task.dueDate && (
-                <Typography variant="caption">{task.dueDate}</Typography>
+                <Typography variant="caption">{format(new Date(task.dueDate), 'MMM dd, yyyy')}</Typography>
               )}
             </div>
           </Grid>
-          <Grid item xs={4}>
+          <Grid item xs={2}>
             <CheckCircleCustom
               className={classes.checkIcon}
               status={status}

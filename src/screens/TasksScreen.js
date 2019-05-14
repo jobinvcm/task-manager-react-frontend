@@ -45,7 +45,7 @@ class TasksScreen extends React.Component {
       tasks: "",
       todoTasks: "",
       doneTasks: "",
-      selectedTask: ""
+      selectedTask: "",
     }
     this.handleModal = this.handleModal.bind(this)
     this.handleTabChange = this.handleTabChange.bind(this)
@@ -102,28 +102,33 @@ class TasksScreen extends React.Component {
   handleTabChange(e, tab) {
     this.setState({ tab })
   }
-  handleModal(task="") {
+  handleModal(task = "") {
     const open = this.state.open
     this.setState({ open: !open })
     if (open) {
       this.getAllTasks()
     }
-    if ( task && (this.state.selectedTask !== task)) {
-        if (this.state.selectedTask.status) {
-          const doneTasks = this.state.doneTasks
-          doneTasks[task.taskId] = task
-          this.setState({ doneTasks: doneTasks })
-        } else {
-          const todoTasks = this.state.todoTasks
-          todoTasks[task.taskId] = task
-          this.setState({ todoTasks: todoTasks })
-        }
+    if (task && this.state.selectedTask !== task) {
+      if (this.state.selectedTask.status) {
+        const doneTasks = this.state.doneTasks
+        doneTasks[task.taskId] = task
+        this.setState({ doneTasks: doneTasks })
+      } else {
+        const todoTasks = this.state.todoTasks
+        todoTasks[task.taskId] = task
+        this.setState({ todoTasks: todoTasks })
       }
-    if(task) {
-      this.setState({"selectedTask": task})
+    }
+    if (task) {
+      this.setState({ selectedTask: task })
     }
   }
   toggleStatus(task) {
+    if (!task) {
+      return
+    }
+    console.log('tasks', task)
+    console.log('state', this.state)
     if (task.status) {
       const doneTasks = this.state.doneTasks
       doneTasks[task.taskId].status = !task.status
@@ -138,10 +143,14 @@ class TasksScreen extends React.Component {
   render() {
     const { classes, userState } = this.props
     const { tab, priorityStates, users, todoTasks, doneTasks } = this.state
-    const { getTodaysTasks, handleModal, toggleStatus } = this
+    const { getTodaysTasks, handleModal, toggleStatus, getAllTasks } = this
     return (
       <div>
-        <Header signOut={this.signOut} getTodaysTasks={getTodaysTasks} />
+        <Header
+          signOut={this.signOut}
+          getTodaysTasks={getTodaysTasks}
+          getAllTasks={getAllTasks}
+        />
         {/* <AppBar position="static" color="default"> */}
         <Tabs
           value={this.state.tab}
@@ -187,6 +196,7 @@ class TasksScreen extends React.Component {
                   task={doneTasks[taskId]}
                   taskId={taskId}
                   toggleTileStatus={toggleStatus}
+                  openModal={handleModal}
                 />
               ))}
             {!doneTasks && <div>No Tasks Found</div>}

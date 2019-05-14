@@ -237,7 +237,7 @@ class AddTaskForm extends React.Component {
             uid: taskPassed ? taskPassed.uid : "",
             title: taskPassed ? taskPassed.title : "",
             dueDate: taskPassed ? taskPassed.dueDate : "",
-            dueDateTimesamp: taskPassed ? taskPassed.dueDateTimesamp : "",
+            dueDateTimestamp: taskPassed ? taskPassed.dueDateTimestamp : "",
             priority: taskPassed ? taskPassed.priority : "",
             description: taskPassed ? taskPassed.description : "",
             status: taskPassed ? taskPassed.status : false,
@@ -247,12 +247,9 @@ class AddTaskForm extends React.Component {
           onSubmit={(values, { setSubmitting, setErrors, setFieldValue }) => {
             values.createdBy = userId
             if (values.dueDate) {
-              setFieldValue(
-                "dueDateTimesamp",
-                new Date(values.dueDate).getTime()
-              )
+              const timestamp = new Date(values.dueDate).getTime();
+              values.dueDateTimestamp = timestamp
             }
-            console.log(values)
             AxiosPost("http://localhost:9000/add-task", {
               refName: `/tasks/${values.taskId}`,
               data: values,

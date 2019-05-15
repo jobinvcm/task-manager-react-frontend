@@ -5,8 +5,14 @@ import Tabs from "@material-ui/core/Tabs"
 import Tab from "@material-ui/core/Tab"
 import Typography from "@material-ui/core/Typography"
 import withStyles from "@material-ui/core/styles/withStyles"
-
-import AxiosPost from "../services/Axios"
+import {
+  getWeeksTasks,
+  getTasksDone,
+  getTasksNotDone,
+  getAllContent,
+  getAllUsers,
+  getTodaysTasks,
+} from "../services/Axios"
 import TaskTile from "../components/TaskTile"
 import AddTaskForm from "../components/AddTaskForm"
 import Firebase from "../services/Firebase"
@@ -30,7 +36,7 @@ const styles = theme => ({
     float: "right",
   },
   taskTile: {
-    paddign: "12px",
+    padding: "12px",
   },
 })
 
@@ -68,7 +74,7 @@ class TasksScreen extends React.Component {
   }
   getWeeksTasks() {
     const _this = this
-    AxiosPost("http://localhost:9000/get-weeks-tasks", {})
+    getWeeksTasks()
       .then(res => {
         _this.setState({ doneTasks: res.data.tasksDone })
         _this.setState({ todoTasks: res.data.tasksNotDone })
@@ -77,12 +83,12 @@ class TasksScreen extends React.Component {
   }
   getAllTasks() {
     const _this = this
-    AxiosPost("http://localhost:9000/get-all-tasks-done", {}).then(res => {
+    getTasksDone().then(res => {
       if (res && res.data) {
         _this.setState({ doneTasks: res.data })
       }
     })
-    AxiosPost("http://localhost:9000/get-all-tasks-not-done", {}).then(res => {
+    getTasksNotDone().then(res => {
       if (res && res.data) {
         console.log(res)
         _this.setState({ todoTasks: res.data })
@@ -92,18 +98,16 @@ class TasksScreen extends React.Component {
   componentDidMount() {
     const _this = this
     _this.getAllTasks()
-    AxiosPost("http://localhost:9000/get-all-content", {
-      refName: "priority",
-    })
+    getAllContent()
       .then(res => _this.setState({ priorityStates: res.data }))
       .catch(error => console.log(error))
-    AxiosPost("http://localhost:9000/get-all-users", {})
+    getAllUsers()
       .then(res => _this.setState({ users: res.data }))
       .catch(error => console.log(error))
   }
   getTodaysTasks() {
     const _this = this
-    AxiosPost("http://localhost:9000/get-todays-tasks", {})
+    getTodaysTasks()
       .then(res => {
         _this.setState({ doneTasks: res.data.tasksDone })
         _this.setState({ todoTasks: res.data.tasksNotDone })
@@ -138,6 +142,7 @@ class TasksScreen extends React.Component {
     if (!task) {
       return
     }
+    console.log(task, this.state)
     if (this.state.doneTasks.hasOwnProperty(task.taskId)) {
       var doneTasks = this.state.doneTasks
       doneTasks[task.taskId].status = !task.status

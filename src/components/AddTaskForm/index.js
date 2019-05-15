@@ -17,7 +17,7 @@ import CustomUploadButton from "react-firebase-file-uploader/lib/CustomUploadBut
 import LinearProgress from "@material-ui/core/LinearProgress"
 
 import MakeId from "../../services/RandomIdGenerator"
-import AxiosPost from "../../services/Axios"
+import {AxiosPost, url} from "../../services/Axios"
 import Firebase from "../../services/Firebase"
 
 const CheckCircleCustom = ({ color, setFieldValue, value }) => (
@@ -259,8 +259,7 @@ class AddTaskForm extends React.Component {
               const timestamp = new Date(values.dueDate).getTime()
               values.dueDateTimestamp = timestamp
             }
-            console.log(values)
-            AxiosPost("http://localhost:9000/add-task", {
+            AxiosPost(`${url}/add-task`, {
               refName: `/tasks/${values.taskId}`,
               data: values,
             }).then(res => {})

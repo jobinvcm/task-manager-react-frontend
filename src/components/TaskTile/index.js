@@ -10,7 +10,7 @@ import SvgIcon from "@material-ui/core/SvgIcon"
 import grey from "@material-ui/core/colors/grey"
 import format from "date-fns/format"
 
-import AxiosPost from "../../services/Axios"
+import { AxiosPost } from "../../services/Axios"
 
 const CheckCircleCustom = ({ toggleStatus, status, taskId }) => (
   <IconButton
@@ -80,7 +80,6 @@ class TaskTile extends React.Component {
       refName: `/tasks/${taskId}/status`,
       data: !status,
     })
-
   }
 
   componentDidMount() {
@@ -104,7 +103,9 @@ class TaskTile extends React.Component {
                 <Typography variant="subheading">{task.title}</Typography>
               )}
               {task.dueDate && (
-                <Typography variant="caption">{format(new Date(task.dueDate), 'MMM dd, yyyy')}</Typography>
+                <Typography variant="caption">
+                  {format(new Date(task.dueDate), "MMM dd, yyyy")}
+                </Typography>
               )}
             </div>
           </Grid>

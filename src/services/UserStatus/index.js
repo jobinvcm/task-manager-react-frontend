@@ -1,11 +1,8 @@
-import Axios from "axios"
+import { checkUserSignedIn } from "../Axios"
 
 const SignedIn = () => {
   if (localStorage.getItem("idToken")) {
-    return Axios.post("http://localhost:9000/check-user-signed-in", {
-      uid: localStorage.getItem("uid"),
-      idToken: localStorage.getItem("idToken"),
-    })
+    return checkUserSignedIn()
       .then(function(res) {
         return res
       })
